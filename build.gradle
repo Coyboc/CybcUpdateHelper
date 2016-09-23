@@ -5,4 +5,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+//TODO remove me
 apply from: 'bintrayUpload.gradle'

@@ -1,4 +1,5 @@
 /build
 /testFiles
 *.iml
+#build.gradle is tracked, do not track other "sensitive" *.gradle files
 *.gradle

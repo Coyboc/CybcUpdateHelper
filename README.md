@@ -18,7 +18,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.cybc.updatehelper.Update;
 
-public class MyUpdateVersion_1 implements Update<SQLiteDatabase> {
+public class MyUpdateVersion_2 implements Update<SQLiteDatabase> {
 
     @Override
     public void execute(SQLiteDatabase database) throws Exception {
@@ -28,8 +28,8 @@ public class MyUpdateVersion_1 implements Update<SQLiteDatabase> {
 
     @Override
     public int getUpdateVersion() {
-        //Version 1
-        return 1;
+        //Version 2
+        return 2;
     }
 }
 ```
@@ -56,11 +56,11 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<Updat
     private final UpdateHelper<Update<SQLiteDatabase>, SQLiteDatabase> updateHelper .... // see third step
 
     public MyOpenHelper(Context context, SQLiteDatabase.CursorFactory factory) {
-        super(context, DB_NAME, factory, 5);
+        super(context, DB_NAME, factory, 6);
     }
 
     @Override
-    public void onCreate(SQLiteDatabase sqLiteDatabase) {/* init your database */}
+    public void onCreate(SQLiteDatabase sqLiteDatabase) {/* init your version 1 database */}
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
@@ -70,7 +70,7 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<Updat
     @Override
     public int getLatestUpdateVersion(SQLiteDatabase database) {
         //return the latest update version, must be equals the newVersion of the database
-        return 5;
+        return 6;
     }
 
     @Override
@@ -78,11 +78,11 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<Updat
         //create your or return your updates here
 
         Set<Update<SQLiteDatabase>> updates = new LinkedHashSet<>();
-        updates.add(new MyUpdateVersion_1());
         updates.add(new MyUpdateVersion_2());
         updates.add(new MyUpdateVersion_3());
         updates.add(new MyUpdateVersion_4());
         updates.add(new MyUpdateVersion_5());
+        updates.add(new MyUpdateVersion_6());
 
         return updates;
     }
@@ -133,7 +133,7 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<Updat
     private final UpdateHelper<Update<SQLiteDatabase>, SQLiteDatabase> updateHelper = new UpdateHelper<>(this);
 
     public MyOpenHelper(Context context, SQLiteDatabase.CursorFactory factory) {
-        super(context, DB_NAME, factory, 5);
+        super(context, DB_NAME, factory, 6);
     }
 
     //...
@@ -152,7 +152,7 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<Updat
 ...Done.
 -------
 
-You can extend your list of updates for future database updates and so on.
+Now you can extend your list of updates for future database updates and so on.
 
 Additional
 ----------
@@ -183,7 +183,7 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<MyOwn
     private final UpdateHelper<MyOwnUpdateInterface, SQLiteDatabase> updateHelper = new UpdateHelper<>(this);
 
     public MyOpenHelper(Context context, SQLiteDatabase.CursorFactory factory) {
-        super(context, DB_NAME, factory, 5);
+        super(context, DB_NAME, factory, 6);
     }
 
     //...
@@ -191,7 +191,7 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<MyOwn
     @Override
     public Collection<MyOwnUpdateInterface> createUpdates() {
         Set<MyOwnUpdateInterface> updates = new LinkedHashSet<>();
-        updates.add(new MyUpdateVersion_1());
+        updates.add(new MyUpdateVersion_2());
         //...
         return updates;
     }
