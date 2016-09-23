@@ -212,4 +212,285 @@ public class MyOpenHelper extends SQLiteOpenHelper implements UpdateWorker<MyOwn
 }
 ```
 
+Testing
+-------
+
+I used for this example `testCompile 'org.robolectric:robolectric:3.1.2'` to have a suitable way to test Android SqliteDatabase via JUnit tests.
+
+Example for Android SQLiteDatabase
+----------------------------------
+
+First step
+----------
+
+Create your `UpdateTest`s which can perform your normal production updates.
+
+```java
+import android.database.sqlite.SQLiteDatabase;
+
+import com.cybc.updatehelper.Update;
+import com.cybc.updatehelper.testing.UpdateTest;
+import com.cybc.updatehelper.testing.UpdateTestExecutor;
+
+import com.example.updates.MyUpdateVersion_1;
+
+public class MyTestUpdateVersion_1 implements UpdateTest<SQLiteDatabase> {
+
+    private Update<SQLiteDatabase> update = new MyUpdateVersion_1();
+
+    @Override
+    public UpdateTestExecutor<SQLiteDatabase> createTestExecutor() {
+        return ... //see second step
+    }
+
+    @Override
+    public void execute(SQLiteDatabase database) throws Exception {
+        update.execute(database);
+    }
+
+    @Override
+    public int getUpdateVersion() {
+        return update.getUpdateVersion();
+    }
+}
+```
+
+Second step
+-----------
+
+Create an `UpdateTestExecutor` which can insert mock data into your database and test for you.
+
+```java
+import static org.junit.Assert.assertTrue;
+
+//...
+
+import com.example.updates.MyUpdateVersion_1;
+
+public class MyTestUpdateVersion_1 implements UpdateTest<SQLiteDatabase> {
+
+    //...
+
+    @Override
+    public UpdateTestExecutor<SQLiteDatabase> createTestExecutor() {
+        //return an update test executor for the actual test
+        return new UpdateTestExecutor<SQLiteDatabase>() {
+            @Override
+            public void insertMockData(SQLiteDatabase database) {
+                //insert your test data here
+                database.execSQL("INSERT ...");
+            }
+
+            @Override
+            public void testConsistency(SQLiteDatabase database) {
+                //test your database changes here together with your mock data
+                assertTrue(1 == 1);
+            }
+        };
+    }
+    //...
+}
+```
+
+Third step
+----------
+
+Prepare a database with your very first version of your database schema.
+The resulting SQLiteDatabase File will be re-used to trigger your updates.
+
+```java
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class MyFirstVersionDatabase extends SQLiteOpenHelper {
+
+    public MyFirstVersionDatabase(Context context, String name) {
+        super(context, name, null, 1);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase database) {
+        //create your fist version schema here
+        database.execSQL("CREATE|INSERT|....");
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
+        //empty, this helper is not intended to make upgrades
+    }
+}
+```
+
+Fourth step
+-----------
+
+Create `UpdateWorker` which performs like the production `UpdateWorker`,
+but instead of creating production updates, it create `UpdateTest`s which wrappes your production updates.
+
+```java
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import com.cybc.updatehelper.UpdateWorker;
+import com.cybc.updatehelper.testing.UpdateTest;
+
+import java.util.Collection;
+
+public class MySqliteOpenHelperTest extends SQLiteOpenHelper implements UpdateWorker<UpdateTest<SQLiteDatabase>, SQLiteDatabase>{
+
+    private final UpdateTester<UpdateTest<SQLiteDatabase>, SQLiteDatabase> updateTester = ... // see fifth step
+
+    public MySqliteOpenHelperTest(Context context, String name) {
+        super(context, name, null, 6);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase sqLiteDatabase) {
+        //empty, this database is not intended to create a database schema
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+        ... //see fifth step
+    }
+
+    @Override
+    public int getLatestUpdateVersion(SQLiteDatabase database) {
+        return 6;
+    }
+
+    @Override
+    public Collection<UpdateTest<SQLiteDatabase>> createUpdates() {
+        //create your UpdateTests here
+        Set<UpdateTest<SQLiteDatabase>> updates = new LinkedHashSet<>();
+        updates.add(new MyTestUpdateVersion_2());
+        updates.add(new MyTestUpdateVersion_3());
+        updates.add(new MyTestUpdateVersion_4());
+        updates.add(new MyTestUpdateVersion_5());
+        updates.add(new MyTestUpdateVersion_6());
+
+        return updates;
+    }
+
+    @Override
+    public void onPreUpdate(SQLiteDatabase database, UpdateTest<SQLiteDatabase> update) {
+      //executed before a test update
+    }
+
+    @Override
+    public void onPostUpdate(SQLiteDatabase database, UpdateTest<SQLiteDatabase> update) {
+      //executed after a test update
+    }
+
+    @Override
+    public void onUpgradingDone(SQLiteDatabase database) {
+      //executed after all test updates
+    }
+
+    @Override
+    public boolean isClosed(SQLiteDatabase database) {
+        return !database.isOpen();
+    }
+}
+```
+
+Fifth step
+-----------
+
+Now create an `UpdateTester` which executes your updates, inserts your mock-data and starts the tests.
+
+
+```java
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import com.cybc.updatehelper.UpdateWorker;
+import com.cybc.updatehelper.testing.UpdateTest;
+import com.cybc.updatehelper.testing.UpdateTester;
+import com.example.MyOwnUpdateInterface;
+import com.example.database.updates.MyTestUpdateVersion_2;
+
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+public class MySqliteOpenHelperTest extends SQLiteOpenHelper implements UpdateWorker<UpdateTest<SQLiteDatabase>, SQLiteDatabase> {
+
+    // the update tester which executes the updates, inserts the mock-data and tests the resulting database
+    private final UpdateTester<UpdateTest<SQLiteDatabase>, SQLiteDatabase> updateTester = new UpdateTester<>(this);
+
+    public MySqliteOpenHelperTest(Context context, String name) {
+        super(context, name, null, 6);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+        //like in production, trigger the updates here
+        updateTester.onUpgrade(sqLiteDatabase, oldVersion, newVersion);
+    }
+
+  //...
+}
+```
+
+Sixth step
+-----------
+
+Now you can start your tests like this:
+
+```java
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
+
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = BuildConfig.class)
+public class DatabaseTest {
+
+    @Test
+    public void startDatabaseTests() {
+        final Context context = Shadows.shadowOf(RuntimeEnvironment.application).getApplicationContext();
+
+        //your database name for the tests
+        final String databaseName = "Test_MyDatabase.db";
+
+        //prepare the first version database
+        final MyFirstVersionDatabase firstVersionOpenHelperTest = new MyFirstVersionDatabase(context, databaseName);
+
+        //trigger the onCreate method for the database, initializes the first version schema
+        SQLiteDatabase firstVersionDatabase = firstVersionOpenHelperTest.getReadableDatabase();
+
+        //make several tests that ensures your first version database is correct initialized
+        assertEquals(firstVersionDatabase.getVersion(), 1);
+
+        firstVersionDatabase.close();//close the database to free the file for the update tests
+        assertFalse(firstVersionDatabase.isOpen());
+
+        //Now prepare your test updater here
+        final MySqliteOpenHelperTest helperTest = new MySqliteOpenHelperTest(context, databaseName);
+
+        //triggers onUpgrade and starts the actual update + tests
+        final SQLiteDatabase databaseToTest = helperTest.getReadableDatabase();
+
+        //make several tests with the updated database
+        assertEquals(databaseToTest.getVersion(), 6);
+
+        databaseToTest.close();
+        assertFalse(databaseToTest.isOpen());
+    }
+
+}
+```
+
 ....work in progress....
