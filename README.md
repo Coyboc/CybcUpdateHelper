@@ -223,7 +223,7 @@ Example for Android SQLiteDatabase
 First step
 ----------
 
-Create your `UpdateTest`s which can perform your normal production updates.
+Create your `UpdateTest`s which wraps your normal production updates.
 
 ```java
 import android.database.sqlite.SQLiteDatabase;
@@ -325,8 +325,8 @@ public class MyFirstVersionDatabase extends SQLiteOpenHelper {
 Fourth step
 -----------
 
-Create `UpdateWorker` which performs like the production `UpdateWorker`,
-but instead of creating production updates, it create `UpdateTest`s which wrappes your production updates.
+Create an `UpdateWorker` which performs like the production `UpdateWorker`,
+but instead of creating production updates, it creates `UpdateTest`s which wraps your actual production updates.
 
 ```java
 import android.content.Context;
@@ -337,6 +337,8 @@ import com.cybc.updatehelper.UpdateWorker;
 import com.cybc.updatehelper.testing.UpdateTest;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class MySqliteOpenHelperTest extends SQLiteOpenHelper implements UpdateWorker<UpdateTest<SQLiteDatabase>, SQLiteDatabase>{
 
@@ -401,7 +403,6 @@ Fifth step
 
 Now create an `UpdateTester` which executes your updates, inserts your mock-data and starts the tests.
 
-
 ```java
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -410,8 +411,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.cybc.updatehelper.UpdateWorker;
 import com.cybc.updatehelper.testing.UpdateTest;
 import com.cybc.updatehelper.testing.UpdateTester;
-import com.example.MyOwnUpdateInterface;
-import com.example.database.updates.MyTestUpdateVersion_2;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
