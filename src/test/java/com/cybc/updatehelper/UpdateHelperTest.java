@@ -3,6 +3,7 @@ package com.cybc.updatehelper;
 import com.cybc.updatehelper.exceptions.UpdateFailedException;
 import com.cybc.updatehelper.exceptions.UpdateNullException;
 import com.cybc.updatehelper.exceptions.UpdateStepFailedException;
+import com.cybc.updatehelper.impl.UpdatableTester;
 import com.cybc.updatehelper.util.FileWriteHelper;
 
 import org.junit.Before;
@@ -134,6 +135,14 @@ public class UpdateHelperTest {
 
         });
         tester.setUpdates(updates);
+        tester.onUpgrade();
+    }
+
+    @Test
+    public void startUpdaterWithSameStartAndTargetVersion() {
+        final UpdatableTester tester = new UpdatableTester(testFile);
+        tester.setTargetVersion(10);
+        tester.setStartVersion(10);
         tester.onUpgrade();
     }
 

@@ -97,6 +97,39 @@ public class UpdateHelperOrderResultTest {
         assertTrue(orderResult.isCorrect());
     }
 
+    @Test
+    public void correctOrderedSingle() {
+        List<Update> updateFactories = new LinkedList<>();
+        updateFactories.add(createUpdate(1));
+
+
+        final UpdateHelper.OrderResult orderResult = UpdateHelper.createOrderResultOf(updateFactories);
+        assertTrue(orderResult.isCorrect());
+    }
+
+    @Test(expected = UpdateNullException.class)
+    public void failureNullSingle() {
+        List<Update> updateFactories = new LinkedList<>();
+        updateFactories.add(null);
+
+
+        final UpdateHelper.OrderResult orderResult = UpdateHelper.createOrderResultOf(updateFactories);
+        assertTrue(orderResult.isCorrect());
+    }
+
+    @Test(expected = UpdateNullException.class)
+    public void failureNullMulti() {
+        List<Update> updateFactories = new LinkedList<>();
+        updateFactories.add(createUpdate(1));
+        updateFactories.add(createUpdate(2));
+        updateFactories.add(null);//wrong!
+        updateFactories.add(createUpdate(4));
+
+
+        final UpdateHelper.OrderResult orderResult = UpdateHelper.createOrderResultOf(updateFactories);
+        assertTrue(orderResult.isCorrect());
+    }
+
     private Update createUpdate(final int version) {
         return new Update() {
             @Override

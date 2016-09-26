@@ -1,5 +1,8 @@
-package com.cybc.updatehelper;
+package com.cybc.updatehelper.impl;
 
+import com.cybc.updatehelper.Update;
+import com.cybc.updatehelper.UpdateHelper;
+import com.cybc.updatehelper.UpdateWorker;
 import com.cybc.updatehelper.util.FileReadHelper;
 import com.cybc.updatehelper.util.FileWriteHelper;
 
@@ -21,6 +24,7 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
     private final LinkedList<Update<File>> updateFactories;
 
     private int targetVersion       = TARGET_VERSION;
+    private int startVersion        = -1;
     private int latestUpdateVersion = -1;
     private boolean isClosed;
 
@@ -38,6 +42,9 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
     }
 
     private int getStartVersion() {
+        if (startVersion >= 0) {
+            return startVersion;
+        }
         return Integer.parseInt(FileReadHelper.readLine(VERSION_LINE, file));
     }
 
@@ -124,5 +131,9 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
 
     public void setTargetVersion(int targetVersion) {
         this.targetVersion = targetVersion;
+    }
+
+    public void setStartVersion(int startVersion) {
+        this.startVersion = startVersion;
     }
 }

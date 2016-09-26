@@ -6,6 +6,7 @@ import com.cybc.updatehelper.exceptions.UpdateOrderWrongException;
 import com.cybc.updatehelper.exceptions.UpdateStepFailedException;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Base class to simplify updates. It provides an implementation for iterating over the updates from the oldest version to the newest one. Also checks the update order for possible
@@ -53,13 +54,20 @@ public abstract class UpdateHelperBase<UpdateImpl extends Update<StorageToUpdate
      *         When a single update step failed.
      */
     public void onUpgrade(StorageToUpdate storageToUpdate, int oldVersion, int newVersion) throws UpdateFailedException, UpdateOrderWrongException, UpdateNullException, UpdateStepFailedException {
-        final int latestUpdateVersion = updatable.getLatestUpdateVersion(storageToUpdate);
+        if(oldVersion == newVersion){
+            return; //nothing to do, db up to date
+        }
 
+        final int latestUpdateVersion = updatable.getLatestUpdateVersion(storageToUpdate);
         if (latestUpdateVersion != newVersion) {
             throw new UpdateFailedException("Latest update version != new Storage Version! UpdatePool incompatible with newest Storage version! latestUpdateVersion[" + latestUpdateVersion + "] <= newVersion[" + newVersion + "]");
         }
 
         final Collection<UpdateImpl> updateFactories = updatable.createUpdates();
+
+        if(updateFactories.isEmpty()){
+            throw new UpdateFailedException("Can't start updates with empty update collection!");
+        }
 
         //check for correct update order
         final OrderResult orderResult = createOrderResultOf(updateFactories);
@@ -103,13 +111,22 @@ public abstract class UpdateHelperBase<UpdateImpl extends Update<StorageToUpdate
      *         When an update is null
      */
     public static <UpdateImpl extends Update> OrderResult createOrderResultOf(Collection<UpdateImpl> updates) throws UpdateNullException {
-        int versionFrom = 0;
-        int previousCheckVersion = 0;
-        for (UpdateImpl update : updates) {
+        final Iterator<UpdateImpl> iterator = updates.iterator();
+        UpdateImpl update = iterator.next();
+
+        if (update == null) {
+            throw new UpdateNullException("Update item is null! For first Update!");
+        }
+
+        int versionFrom = update.getUpdateVersion();
+        int previousCheckVersion = update.getUpdateVersion();
+
+        while (iterator.hasNext()) {
+            update = iterator.next();
+
             if (update == null) {
                 throw new UpdateNullException("Update item is null! Last version update was: " + previousCheckVersion);
             }
-
             final int versionTo = update.getUpdateVersion();
             if (versionFrom > versionTo) {
                 return OrderResult.forWrong(versionFrom, versionTo);
