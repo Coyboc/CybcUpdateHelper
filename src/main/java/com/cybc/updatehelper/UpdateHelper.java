@@ -57,7 +57,7 @@ public class UpdateHelper<UpdateImpl extends Update<StorageToUpdate>, StorageToU
         if(oldVersion == newVersion){
             return; //nothing to do, db up to date
         }
-
+        //TODO try to handle this by the framework
         final int latestUpdateVersion = updatable.getLatestUpdateVersion(storageToUpdate);
         if (latestUpdateVersion != newVersion) {
             throw new UpdateFailedException("Latest update version != new Storage Version! UpdatePool incompatible with newest Storage version! latestUpdateVersion[" + latestUpdateVersion + "] <= newVersion[" + newVersion + "]");
