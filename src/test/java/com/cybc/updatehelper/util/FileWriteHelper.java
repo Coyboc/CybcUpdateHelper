@@ -1,6 +1,7 @@
 package com.cybc.updatehelper.util;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,23 @@ public class FileWriteHelper {
         }
     }
 
-    public static void changeSingleLine(int lineNumber, String toWriteLine, File file) {
+    public static void writeSingleLine(int lineNumber, String toWriteLine, File file) {
+        try {
+            if(lineNumber <= 0){
+                throw new IllegalArgumentException("Lines starting at 1!");
+            }
+            final Path path = Paths.get(file.getPath());
+            int lines = Files.readAllLines(path, StandardCharsets.UTF_8).size();
+            if (lines < lineNumber) {
+                addEmptyLines(lineNumber + 1, file);
+            }
+            changeSingleLine(lineNumber, toWriteLine, file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addEmptyLines(int lineNumber, File file) {
         try {
             if (!file.exists()) {
                 throw new IllegalArgumentException("File not exists!");
@@ -31,14 +48,39 @@ public class FileWriteHelper {
             final Path path = Paths.get(file.getPath());
             List<String> fileLines = new ArrayList<>(Files.readAllLines(path, StandardCharsets.UTF_8));
             final int fileLineNumbers = fileLines.size();
-            if (lineNumber > fileLineNumbers - 1) {
-                throw new IllegalArgumentException("lineNumber can't be bigger then file line numbers! lineNumber[" + lineNumber + "] > fileLineNumber[" + fileLineNumbers + "]");
+
+            if (fileLineNumbers < lineNumber) {
+                List<String> newLines = new ArrayList<>();
+                for (int i = 0; i < ((lineNumber - 1) - fileLineNumbers); i++) {
+                    newLines.add("");
+                }
+                fileLines.addAll(newLines);
             }
-            fileLines.set(lineNumber, toWriteLine);
+
             Files.write(path, fileLines, StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
+    public static void changeSingleLine(int lineNumber, String toWriteLine, File file) {
+        try {
+            if (!file.exists()) {
+                throw new IllegalArgumentException("File not exists!");
+            }
+            if(lineNumber <= 0){
+                throw new IllegalArgumentException("Lines starting at 1!");
+            }
+            final Path path = Paths.get(file.getPath());
+            List<String> fileLines = new ArrayList<>(Files.readAllLines(path, StandardCharsets.UTF_8));
+            final int fileLineNumbers = fileLines.size();
+            if (fileLineNumbers < lineNumber) {
+                throw new IllegalArgumentException("lineNumber can't be bigger then file line numbers! lineNumber[" + lineNumber + "] > fileLineNumber[" + fileLineNumbers + "]");
+            }
+            fileLines.set(lineNumber - 1, toWriteLine);
+            Files.write(path, fileLines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

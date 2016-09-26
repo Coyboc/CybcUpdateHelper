@@ -13,9 +13,12 @@ public class FileReadHelper {
         if (!file.exists()) {
             throw new IllegalArgumentException("File not exists.");
         }
+        if (lineNumber <= 0) {
+            throw new IllegalArgumentException("Lines starting at 1!");
+        }
         try {
             List<String> lines = Files.readAllLines(Paths.get(file.getAbsolutePath()), StandardCharsets.UTF_8);
-            return lines.get(lineNumber);
+            return lines.get(lineNumber - 1);
         } catch (IOException e) {
             e.printStackTrace();
         }

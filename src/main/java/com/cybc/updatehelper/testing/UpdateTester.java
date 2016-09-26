@@ -48,8 +48,8 @@ public class UpdateTester<UpdateImpl extends UpdateTest<StorageToUpdate>, Storag
     }
 
     @Override
-    public boolean isClosed(StorageToUpdate storageToUpdate) {
-        return updatable.isClosed(storageToUpdate);
+    public boolean isStorageClosed(StorageToUpdate storageToUpdate) {
+        return updatable.isStorageClosed(storageToUpdate);
     }
 
     @Override

@@ -1,8 +1,13 @@
 package com.cybc.updatehelper.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.cybc.updatehelper.Update;
 import com.cybc.updatehelper.UpdateHelper;
 import com.cybc.updatehelper.UpdateWorker;
+import com.cybc.updatehelper.testing.UpdateTest;
+import com.cybc.updatehelper.testing.UpdateTestExecutor;
+import com.cybc.updatehelper.testing.UpdateTester;
 import com.cybc.updatehelper.util.FileReadHelper;
 import com.cybc.updatehelper.util.FileWriteHelper;
 
@@ -15,28 +20,27 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public class UpdatableTester implements UpdateWorker<Update<File>, File> {
-
+public class UpdateTesterImpl implements UpdateWorker<UpdateTest<File>, File> {
 
     private static final int VERSION_LINE   = 1;
     public static final  int TARGET_VERSION = 10;
-
     private final File file;
-    private final UpdateHelper<Update<File>, File> fileUpdateHelper = new UpdateHelper<>(this); //will result in NPE if any method of the UpdateWorker is called in ctor
-    private final LinkedList<Update<File>> updates;
+    private final UpdateTester<UpdateTest<File>, File> fileUpdateHelper = new UpdateTester<>(this);
+    private final LinkedList<UpdateTest<File>> updateFactories;
 
     private int targetVersion       = TARGET_VERSION;
     private int startVersion        = -1;
     private int latestUpdateVersion = -1;
     private boolean isClosed;
 
-    public UpdatableTester(File file) {
+    public UpdateTesterImpl(File file) {
         this.file = file;
 
-        updates = new LinkedList<>();
+        updateFactories = new LinkedList<>();
         for (int i = 1; i < TARGET_VERSION + 1; i++) {
-            updates.add(createUpdate(i));
+            updateFactories.add(createUpdate(i));
         }
+        FileWriteHelper.addEmptyLines(TARGET_VERSION + 1, file);
     }
 
     public void onUpgrade() {
@@ -56,7 +60,7 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
             return latestUpdateVersion;
         }
         int latestVersion = 0;
-        for (Update update : updates) {
+        for (Update update : updateFactories) {
             if (update == null) {
                 continue;
             }
@@ -69,16 +73,16 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
     }
 
     @Override
-    public Collection<Update<File>> createUpdates() {
-        return updates;
+    public Collection<UpdateTest<File>> createUpdates() {
+        return updateFactories;
     }
 
     @Override
-    public void onPreUpdate(File file, Update<File> update) {
+    public void onPreUpdate(File file, UpdateTest<File> update) {
     }
 
     @Override
-    public void onPostUpdate(File file, Update<File> update) {
+    public void onPostUpdate(File file, UpdateTest<File> update) {
     }
 
     @Override
@@ -99,8 +103,29 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
         return isClosed;
     }
 
-    private Update<File> createUpdate(final int version) {
-        return new Update<File>() {
+    private UpdateTest<File> createUpdate(final int version) {
+        return new UpdateTest<File>() {
+
+            int line = version - 1;
+
+            @Override
+            public UpdateTestExecutor<File> createTestExecutor() {
+                final String readLine = FileReadHelper.readLine(line, file);
+                final String mockData = readLine + " MOCKED!";
+                return new UpdateTestExecutor<File>() {
+                    @Override
+                    public void testConsistency(File file) {
+                        final String readLine = FileReadHelper.readLine(line, file);
+                        assertEquals(readLine, mockData);
+                    }
+
+                    @Override
+                    public void insertMockData(File file) {
+                        FileWriteHelper.changeSingleLine(line, mockData, file);
+                    }
+                };
+            }
+
             @Override
             public int getUpdateVersion() {
                 return version;
@@ -108,19 +133,19 @@ public class UpdatableTester implements UpdateWorker<Update<File>, File> {
 
             @Override
             public void execute(File file) throws Exception {
-                FileWriteHelper.writeSingleLine(version + " - HELLO", file);
+                FileWriteHelper.writeSingleLine(line, version + " - HELLO", file);
                 FileWriteHelper.changeSingleLine(VERSION_LINE, String.valueOf(version), file);
             }
         };
     }
 
-    public void addUpdate(int position, Update<File> update) {
-        updates.add(position, update);
+    public void addUpdate(int position, UpdateTest<File> update) {
+        updateFactories.add(position, update);
     }
 
-    public void setUpdates(Collection<Update<File>> updateFactories) {
-        this.updates.clear();
-        this.updates.addAll(updateFactories);
+    public void setUpdates(Collection<UpdateTest<File>> updateFactories) {
+        this.updateFactories.clear();
+        this.updateFactories.addAll(updateFactories);
     }
 
     public void setLatestUpdateVersion(int latestUpdateVersion) {

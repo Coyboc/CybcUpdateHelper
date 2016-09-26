@@ -75,7 +75,7 @@ public class UpdateHelper<UpdateImpl extends Update<StorageToUpdate>, StorageToU
 
         int lastVersionUpdate = 0;
         for (UpdateImpl update : updateFactories) {
-            if (updatable.isClosed(storageToUpdate)) {
+            if (updatable.isStorageClosed(storageToUpdate)) {
                 throw new UpdateFailedException("StorageConnection is closed! Does an update close the Storage? Last version update was: " + lastVersionUpdate);
             }
 

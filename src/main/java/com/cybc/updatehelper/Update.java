@@ -12,7 +12,7 @@ public interface Update<StorageToUpdate> {
      * The execution of the Update. Implement here your storage update logic.
      *
      * @param storageToUpdate
-     *         The storage which gets this update.
+     *         The storage which should get updated
      */
     void execute(StorageToUpdate storageToUpdate) throws Exception;
 
