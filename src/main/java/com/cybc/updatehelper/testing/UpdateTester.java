@@ -1,6 +1,6 @@
 package com.cybc.updatehelper.testing;
 
-import com.cybc.updatehelper.UpdateHelperBase;
+import com.cybc.updatehelper.UpdateHelper;
 import com.cybc.updatehelper.UpdateWorker;
 
 /**
@@ -11,7 +11,7 @@ import com.cybc.updatehelper.UpdateWorker;
  * @param <StorageToUpdate>
  *         the implementation for the storage
  */
-public class UpdateTester<UpdateImpl extends UpdateTest<StorageToUpdate>, StorageToUpdate> extends UpdateHelperBase<UpdateImpl, StorageToUpdate> {
+public class UpdateTester<UpdateImpl extends UpdateTest<StorageToUpdate>, StorageToUpdate> extends UpdateHelper<UpdateImpl, StorageToUpdate> {
 
     public UpdateTester(UpdateWorker<UpdateImpl, StorageToUpdate> updatable) {
         super(updatable);

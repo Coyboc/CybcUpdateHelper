@@ -9,7 +9,4 @@ public class UpdateFailedException extends RuntimeException {
         super(detailMessage);
     }
 
-    public UpdateFailedException(String detailMessage, Throwable throwable) {
-        super(detailMessage, throwable);
-    }
 }

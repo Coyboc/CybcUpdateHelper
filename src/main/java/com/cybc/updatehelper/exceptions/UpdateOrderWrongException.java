@@ -1,9 +1,11 @@
 package com.cybc.updatehelper.exceptions;
 
+import com.cybc.updatehelper.UpdateHelper;
+
 /**
  * Is thrown if the order of the updates are incorrect.
  *
- * @see com.cybc.updatehelper.UpdateHelperBase.OrderResult
+ * @see UpdateHelper.OrderResult
  */
 public class UpdateOrderWrongException extends RuntimeException {
 

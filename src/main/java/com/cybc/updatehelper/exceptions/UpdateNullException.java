@@ -9,7 +9,4 @@ public class UpdateNullException extends RuntimeException {
         super(detailMessage);
     }
 
-    public UpdateNullException(String detailMessage, Throwable throwable) {
-        super(detailMessage, throwable);
-    }
 }
