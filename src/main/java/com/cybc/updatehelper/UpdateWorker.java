@@ -1,6 +1,6 @@
 package com.cybc.updatehelper;
 
-import com.cybc.updatehelper.exceptions.UpdateOrderWrongException;
+import com.cybc.updatehelper.exceptions.UpdateValidationException;
 
 import java.util.Collection;
 
@@ -23,12 +23,12 @@ public interface UpdateWorker<UpdateImpl extends Update<StorageToUpdate>, Storag
 
     /**
      * Creates a collection of {@link UpdateImpl}. <p> <b>The implementation of this method should ensure that the updates are in the correct order or {@link
-     * UpdateHelper#onUpgrade(StorageToUpdate, int, int)} will throw an {@link UpdateOrderWrongException}.</b> </p>
+     * UpdateHelper#onUpgrade(StorageToUpdate, int, int)} will throw an {@link UpdateValidationException}.</b> </p>
      *
      * @return Collection of {@link UpdateImpl}.
      *
      * @see UpdateHelper#onUpgrade(StorageToUpdate, int, int)
-     * @see UpdateHelper#createOrderResultOf(Collection)
+     * @see UpdateHelper#validateUpdates(Collection, int)
      */
     Collection<UpdateImpl> createUpdates();
 

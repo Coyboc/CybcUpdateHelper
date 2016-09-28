@@ -1,49 +1,74 @@
 package com.cybc.updatehelper;
 
-import com.cybc.updatehelper.exceptions.UpdateFailedException;
-import com.cybc.updatehelper.exceptions.UpdateNullException;
-import com.cybc.updatehelper.exceptions.UpdateStepFailedException;
-import com.cybc.updatehelper.impl.UpdatableTester;
-import com.cybc.updatehelper.impl.UpdateTesterImpl;
-import com.cybc.updatehelper.util.FileWriteHelper;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-@RunWith(JUnit4.class)
 public class UpdateTesterTest {
 
-    private File testFile;
-
-    @Before
-    public void createTestFile() {
-        File testDir = new File("testFiles/");
-        if (!testDir.exists()) {
-            testDir.mkdirs();
-        }
-        testFile = new File(testDir, "/testUpdates.csv");
-
-        if (testFile.exists()) {
-            testFile.delete();
-        }
-
-        FileWriteHelper.writeSingleLine("1", testFile);
-    }
-
-    @Test
-    public void updateTests(){
-        UpdateTesterImpl tester = new UpdateTesterImpl(testFile);
-        tester.onUpgrade();
-    }
-
-    @Test
-    public void writeEmptyLines(){
-        FileWriteHelper.addEmptyLines(100, testFile);
-    }
+//
+//
+//    private void foo(){
+//        UpdateTestWorker testWorker = new UpdateTestWorker();
+//        UpdateTester<UpdateTest<IntegerStorage>, IntegerStorage> updateTester = new UpdateTester<>(testWorker);
+//
+//    }
+//
+//    private class UpdateTestWorker implements UpdateWorker<UpdateTest<IntegerStorage>, IntegerStorage>{
+//
+//        @Override
+//        public int getLatestUpdateVersion(IntegerStorage integers) {
+//            return 0;
+//        }
+//
+//        @Override
+//        public Collection<UpdateTest<IntegerStorage>> createUpdates() {
+//            return null;
+//        }
+//
+//        @Override
+//        public void onPreUpdate(IntegerStorage integers, UpdateTest<IntegerStorage> update) {
+//
+//        }
+//
+//        @Override
+//        public void onPostUpdate(IntegerStorage integers, UpdateTest<IntegerStorage> update) {
+//
+//        }
+//
+//        @Override
+//        public void onUpgradingDone(IntegerStorage integers) {
+//
+//        }
+//
+//        @Override
+//        public boolean isStorageClosed(IntegerStorage integers) {
+//            return false;
+//        }
+//    }
+//
+//    private UpdateTest<IntegerStorage> createTestUpdate(final int version){
+//        return new UpdateTest<IntegerStorage>() {
+//            @Override
+//            public UpdateTestExecutor<IntegerStorage> createTestExecutor() {
+//                return new UpdateTestExecutor<IntegerStorage>() {
+//                    @Override
+//                    public void insertMockData(IntegerStorage integers) {
+//
+//                    }
+//
+//                    @Override
+//                    public void testConsistency(IntegerStorage integers) {
+//
+//                    }
+//                };
+//            }
+//
+//            @Override
+//            public void execute(IntegerStorage integers) throws Exception {
+//
+//            }
+//
+//            @Override
+//            public int getUpdateVersion() {
+//                return version;
+//            }
+//        };
+//    }
 }

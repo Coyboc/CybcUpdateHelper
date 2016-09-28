@@ -5,7 +5,7 @@ import static junit.framework.Assert.assertNotNull;
 
 import com.cybc.updatehelper.exceptions.UpdateFailedException;
 import com.cybc.updatehelper.exceptions.UpdateNullException;
-import com.cybc.updatehelper.exceptions.UpdateOrderWrongException;
+import com.cybc.updatehelper.exceptions.UpdateValidationException;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +16,9 @@ import java.util.Collection;
 import java.util.List;
 
 @RunWith(JUnit4.class)
-public class UpdateHelperIntegerStorageTest {
+public class UpdateHelperTest {
+
+    private boolean enableLogging = false;
 
     /*
     This TestClass uses a simple integer list as the storage 'to update'.
@@ -27,7 +29,7 @@ public class UpdateHelperIntegerStorageTest {
         final int updateSize = 5;
         List<Update<IntegerStorage>> updates = new ArrayList<>();
         for (int i = 0; i < updateSize; i++) {
-            updates.add(createUpdate(i));
+            updates.add(createUpdate(i, false));
         }
         Update last = null;
         for (Update u : updates) {
@@ -61,14 +63,14 @@ public class UpdateHelperIntegerStorageTest {
             public int getLatestUpdateVersion(IntegerStorage intStorage) {
                 assertNotNull(intStorage);
                 assertEquals(methodLocalStorage, intStorage);
-                return updateSize;
+                return updateSize - 1;
             }
 
             @Override
             public Collection<Update<IntegerStorage>> createUpdates() {
                 List<Update<IntegerStorage>> updates = new ArrayList<>();
                 for (int i = 0; i < updateSize; i++) {
-                    updates.add(createUpdate(i));
+                    updates.add(createUpdate(i, false));
                 }
                 Update last = null;
                 for (Update u : updates) {
@@ -129,16 +131,16 @@ public class UpdateHelperIntegerStorageTest {
             @Override
             public boolean isStorageClosed(IntegerStorage integers) {
                 assertEquals(methodLocalStorage, integers);
-                return false;
+                return integers.isClosed();
             }
         });
-        updateHelper.onUpgrade(methodLocalStorage, -1, updateSize);
+        updateHelper.onUpgrade(methodLocalStorage, -1, updateSize - 1);
     }
 
     @Test(expected = UpdateNullException.class)
     public void testNullUpdates() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
+        updates.add(createUpdate(1, false));
         updates.add(null);
         TestUpdateWorker worker = new TestUpdateWorker(2, updates);
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 2);
@@ -147,7 +149,7 @@ public class UpdateHelperIntegerStorageTest {
     @Test(expected = UpdateFailedException.class)
     public void testWrongLatestVersionUpdates() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
+        updates.add(createUpdate(1, false));
         TestUpdateWorker worker = new TestUpdateWorker(546567, updates);
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 2);
     }
@@ -155,9 +157,9 @@ public class UpdateHelperIntegerStorageTest {
     @Test(expected = UpdateFailedException.class)
     public void testWrongUpdateCount() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
-        updates.add(createUpdate(2));
-        updates.add(createUpdate(3));
+        updates.add(createUpdate(1, false));
+        updates.add(createUpdate(2, false));
+        updates.add(createUpdate(3, false));
 
         int lastUpdateVersion = 3;
 
@@ -165,37 +167,39 @@ public class UpdateHelperIntegerStorageTest {
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 10);
     }
 
-    @Test(expected = UpdateOrderWrongException.class)
+    @Test(expected = UpdateValidationException.class)
     public void testWrongUpdateOrder() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
-        updates.add(createUpdate(3));
-        updates.add(createUpdate(2));
+        updates.add(createUpdate(1, false));
+        updates.add(createUpdate(3, false));
+        updates.add(createUpdate(2, false));
         TestUpdateWorker worker = new TestUpdateWorker(3, updates);
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 3);
     }
 
-    @Test(expected = UpdateOrderWrongException.class)
+    @Test(expected = UpdateValidationException.class)
     public void testEqualUpdateVersion() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
-        updates.add(createUpdate(1));
-        updates.add(createUpdate(1));
+        updates.add(createUpdate(1, false));
+        updates.add(createUpdate(1, false));
+        updates.add(createUpdate(1, false));
         TestUpdateWorker worker = new TestUpdateWorker(1, updates);
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 1);
     }
 
     @Test(expected = UpdateFailedException.class)
-    public void testStorageClosed() {
+    public void testStorageClosedAfterUpdate() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
-        updates.add(createUpdate(1));
-        updates.add(createUpdate(2));
+        updates.add(createUpdate(1, false));
+        updates.add(createUpdate(2, false));
+        updates.add(createUpdate(3, false));
+        updates.add(createUpdate(4, true));
+        updates.add(createUpdate(5, false));
         TestUpdateWorker worker = new TestUpdateWorker(2, updates);
-        worker.setStorageClosed(true);
-        new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 2);
+        new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 5);
     }
 
-    private Update<IntegerStorage> createUpdate(final int version) {
+    private Update<IntegerStorage> createUpdate(final int version, final boolean closeStorageAfterUpdate) {
         return new Update<IntegerStorage>() {
             @Override
             public int getUpdateVersion() {
@@ -205,6 +209,9 @@ public class UpdateHelperIntegerStorageTest {
             @Override
             public void execute(IntegerStorage array) throws Exception {
                 array.add(version);
+                if (closeStorageAfterUpdate) {
+                    array.setClosed(true);
+                }
             }
         };
     }
@@ -213,15 +220,10 @@ public class UpdateHelperIntegerStorageTest {
 
         private final int                                latestVersion;
         private final Collection<Update<IntegerStorage>> updates;
-        private boolean closed = false;
 
         private TestUpdateWorker(final int latestVersion, Collection<Update<IntegerStorage>> updates) {
             this.latestVersion = latestVersion;
             this.updates = updates;
-        }
-
-        private void setStorageClosed(final boolean closed) {
-            this.closed = closed;
         }
 
         @Override
@@ -244,15 +246,15 @@ public class UpdateHelperIntegerStorageTest {
         public void onUpgradingDone(IntegerStorage integers) {}
 
         @Override
-        public boolean isStorageClosed(IntegerStorage integers) {return closed;}
-    }
-
-    private class IntegerStorage extends ArrayList<Integer> {
-        //much wow, storage in ram -> fast
+        public boolean isStorageClosed(IntegerStorage integers) {
+            return integers.isClosed();
+        }
     }
 
     private void log(String msg) {
-        System.out.println(msg);
+        if (enableLogging) {
+            System.out.println(msg);
+        }
     }
 
 }

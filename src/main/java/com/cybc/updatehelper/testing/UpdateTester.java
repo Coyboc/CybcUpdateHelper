@@ -1,80 +1,88 @@
 package com.cybc.updatehelper.testing;
 
+import com.cybc.updatehelper.Update;
 import com.cybc.updatehelper.UpdateHelper;
 import com.cybc.updatehelper.UpdateWorker;
-import com.cybc.updatehelper.testing.exceptions.TestUpdateExecutionFailedException;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Base class to create own implementations of update testers
- *
- * @param <UpdateImpl>
- *         The implementing update test factory
- * @param <StorageToUpdate>
- *         the implementation for the storage
- */
-public class UpdateTester<UpdateImpl extends UpdateTest<StorageToUpdate>, StorageToUpdate> implements UpdateWorker<UpdateImpl, StorageToUpdate> {
+public class UpdateTester<Storage> implements UpdateWorker<Update<Storage>, Storage> {
 
-    private final UpdateWorker<UpdateImpl, StorageToUpdate> updatable;
-    private final UpdateHelper<UpdateImpl, StorageToUpdate> updateHelper = new UpdateHelper<>(this);
+    private final UpdateHelper<Update<Storage>, Storage>    helper;
+    private final StorageProvider<Storage>                  storageProvider;
+    private final Map<Update<Storage>, UpdateTest<Storage>> updateMap;
+    private final Collection<UpdateTest<Storage>>           testUpdatesSorted;
+    private       int                                       newVersion;
 
-    public UpdateTester(UpdateWorker<UpdateImpl, StorageToUpdate> updatable) {
-        this.updatable = updatable;
+    public interface StorageProvider<Storage> {
+        Storage createTemporaryStorage();
+
+        boolean isStorageClosed(Storage storage);
+
+        void closeStorage(Storage storage);
     }
 
-    @Override
-    public int getLatestUpdateVersion(StorageToUpdate storageToUpdate) {
-        return updatable.getLatestUpdateVersion(storageToUpdate);
+    public UpdateTester(StorageProvider<Storage> storageProvider, Collection<UpdateTest<Storage>> testUpdates) {
+        this.storageProvider = storageProvider;
+        this.updateMap = createUpdateMap(testUpdates);
+        this.testUpdatesSorted = testUpdates;
+        this.helper = new UpdateHelper<>(this);
     }
 
-    @Override
-    public Collection<UpdateImpl> createUpdates() {
-        return updatable.createUpdates();
+    public void runTestUpdates(final int oldVersion, final int newVersion) {
+        this.newVersion = newVersion;
+        helper.onUpgrade(storageProvider.createTemporaryStorage(), oldVersion, newVersion);
     }
 
-    @Override
-    public void onPreUpdate(StorageToUpdate storageToUpdate, UpdateImpl update) {
-        updatable.onPreUpdate(storageToUpdate, update);
-    }
-
-    public void onUpgrade(StorageToUpdate storageToUpdate, int oldVersion, int newVersion) {
-        updateHelper.onUpgrade(storageToUpdate, oldVersion, newVersion);
-    }
-
-    @Override
-    public void onUpgradingDone(StorageToUpdate storageToUpdate) {
-        updatable.onUpgradingDone(storageToUpdate);
-    }
-
-    @Override
-    public boolean isStorageClosed(StorageToUpdate storageToUpdate) {
-        return updatable.isStorageClosed(storageToUpdate);
-    }
-
-    @Override
-    public void onPostUpdate(StorageToUpdate storageToUpdate, UpdateImpl update) {
-        UpdateTestExecutor<StorageToUpdate> test = update.createTestExecutor();
-
-        if (test == null) {
-            throw new TestUpdateExecutionFailedException("Test is null for: " + update);
+    private Map<Update<Storage>, UpdateTest<Storage>> createUpdateMap(Collection<UpdateTest<Storage>> testUpdates) {
+        Map<Update<Storage>, UpdateTest<Storage>> updateMap = new HashMap<>();
+        for (UpdateTest<Storage> test : testUpdates) {
+            updateMap.put(test.getUpdateToTest(), test);
         }
-
-        executeTestUpdate(storageToUpdate, test);
+        return updateMap;
     }
 
-    /**
-     * Is called when the update will be tested by the (@link UpdateTesterBase}.
-     *
-     * @param storageToUpdate
-     *         The storage of the test
-     * @param updateTest
-     *         The test for the storage update
-     */
-    protected void executeTestUpdate(StorageToUpdate storageToUpdate, UpdateTestExecutor<StorageToUpdate> updateTest) {
+    @Override
+    public int getLatestUpdateVersion(Storage storage) {
+        return newVersion;
+    }
+
+    @Override
+    public Collection<Update<Storage>> createUpdates() {
+        List<Update<Storage>> updates = new ArrayList<>();
+        for (UpdateTest<Storage> item : testUpdatesSorted) {
+            updates.add(item.getUpdateToTest());
+        }
+        return updates;
+    }
+
+    @Override
+    public void onPreUpdate(Storage storage, Update<Storage> update) {
+        //nothing to do
+    }
+
+    // basically the interesting stuff happens here:
+
+    @Override
+    public void onPostUpdate(Storage storage, Update<Storage> update) {
+        UpdateTest<Storage> testUpdate = updateMap.get(update);
         //inserting mock data
-        updateTest.insertMockData(storageToUpdate);
+        testUpdate.insertMockData(storage);
         //make tests with inserted mock data
-        updateTest.testConsistency(storageToUpdate);
+        testUpdate.testConsistency(storage);
+    }
+
+    @Override
+    public void onUpgradingDone(Storage storage) {
+        this.storageProvider.closeStorage(storage);
+    }
+
+    @Override
+    public boolean isStorageClosed(Storage storage) {
+        return storageProvider.isStorageClosed(storage);
     }
 }
