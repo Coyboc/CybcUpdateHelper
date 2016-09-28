@@ -10,17 +10,11 @@ public class UpdateStepFailedException extends RuntimeException {
     /**
      * The failed update or null
      */
-    public final Update failedUpdateOrNull;
+    public final Update failedUpdate;
 
-    public UpdateStepFailedException(Update failedUpdateOrNull, Throwable throwable) {
-        super(createErrorMessage(failedUpdateOrNull), throwable);
-        this.failedUpdateOrNull = failedUpdateOrNull;
+    public UpdateStepFailedException(Update update, Throwable throwable) {
+        super("Update with version '" + update.getUpdateVersion() + "' failed!", throwable);
+        this.failedUpdate = update;
     }
 
-    private static String createErrorMessage(Update update) {
-        if (update == null) {
-            return "Update is Null!";
-        }
-        return "Update with version '" + update.getUpdateVersion() + "' Failed!";
-    }
 }

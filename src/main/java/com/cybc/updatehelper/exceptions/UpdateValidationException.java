@@ -20,7 +20,7 @@ public class UpdateValidationException extends RuntimeException {
         return new UpdateValidationException("There are no updates provided!");
     }
     public static UpdateValidationException forWrongFinalVersion(final int expectedFinalVersion, final int actualFinalVersion) {
-        return new UpdateValidationException("The provided updates are not sufficient to push the storage to the expected version. Expcted: " + expectedFinalVersion + ", actual: " + actualFinalVersion);
+        return new UpdateValidationException("The provided updates are not sufficient to push the storage to the expected version. Expected: " + expectedFinalVersion + ", actual: " + actualFinalVersion);
     }
 
     private UpdateValidationException(String detailMessage) {

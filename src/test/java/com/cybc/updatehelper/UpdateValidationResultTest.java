@@ -51,7 +51,7 @@ public class UpdateValidationResultTest {
         assertTrue(updateValidationResult.isCorrect());
     }
 
-    @Test
+    @Test(expected = UpdateValidationException.class)
     public void unexpectedFinalVersion() {
         List<Update> updates = new LinkedList<>();
         updates.add(createUpdate(1));
@@ -60,6 +60,7 @@ public class UpdateValidationResultTest {
         final UpdateHelper.UpdateValidationResult updateValidationResult = UpdateHelper.validateUpdates(updates, 10);
         assertNotNull(updateValidationResult);
         assertTrue(updateValidationResult.isUnexpectedFinalVersion());
+        updateValidationResult.throwIfCorrupted();
     }
 
     @Test

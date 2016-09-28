@@ -2,9 +2,11 @@ package com.cybc.updatehelper;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import com.cybc.updatehelper.exceptions.UpdateFailedException;
 import com.cybc.updatehelper.exceptions.UpdateNullException;
+import com.cybc.updatehelper.exceptions.UpdateStepFailedException;
 import com.cybc.updatehelper.exceptions.UpdateValidationException;
 
 import org.junit.Test;
@@ -137,6 +139,12 @@ public class UpdateHelperTest {
         updateHelper.onUpgrade(methodLocalStorage, -1, updateSize - 1);
     }
 
+    @Test
+    public void testSameVersion(){
+        TestUpdateWorker worker = new TestUpdateWorker(2, new ArrayList<Update<IntegerStorage>>());
+        new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 5, 5); // should directly return
+    }
+
     @Test(expected = UpdateNullException.class)
     public void testNullUpdates() {
         List<Update<IntegerStorage>> updates = new ArrayList<>();
@@ -209,6 +217,32 @@ public class UpdateHelperTest {
     public void testUpdatesEmpty() {
         TestUpdateWorker worker = new TestUpdateWorker(5, new ArrayList<Update<IntegerStorage>>());
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 5);
+    }
+
+    @Test
+    public void testCorruptUpdate() {
+        final IllegalArgumentException throwOnExcecute = new IllegalArgumentException("ExceptedCause, 'Something went wrong.'");
+        Update<IntegerStorage> corruptUpdate = new Update<IntegerStorage>() {
+            @Override
+            public void execute(IntegerStorage integers) throws Exception {
+                throw throwOnExcecute;
+            }
+
+            @Override
+            public int getUpdateVersion() {
+                return 1;
+            }
+        };
+        List<Update<IntegerStorage>> collection = new ArrayList<>();
+        collection.add(corruptUpdate);
+        TestUpdateWorker worker = new TestUpdateWorker(1, collection);
+        try {
+            new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 1);
+            fail("No UpdateStepFailedException thrown!");
+        } catch (UpdateStepFailedException e) {
+            assertNotNull(e);
+            assertEquals(throwOnExcecute, e.getCause());
+        }
     }
 
     private Update<IntegerStorage> createUpdate(final int version, final boolean closeStorageAfterUpdate) {
