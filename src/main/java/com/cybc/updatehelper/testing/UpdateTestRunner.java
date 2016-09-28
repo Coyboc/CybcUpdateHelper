@@ -10,38 +10,41 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UpdateTester<Storage> implements UpdateWorker<Update<Storage>, Storage> {
+public class UpdateTestRunner<Storage> implements UpdateWorker<Update<Storage>, Storage> {
 
-    private final UpdateHelper<Update<Storage>, Storage>    helper;
-    private final StorageProvider<Storage>                  storageProvider;
-    private final Map<Update<Storage>, UpdateTest<Storage>> updateMap;
-    private final Collection<UpdateTest<Storage>>           testUpdatesSorted;
-    private       int                                       newVersion;
+    private final UpdateHelper<Update<Storage>, Storage> helper;
+    private final StorageProvider<Storage>               storageProvider;
+    private final Map<Integer, UpdateTest<Storage>>      updateMap;
+    private final Collection<UpdateTest<Storage>>        testUpdatesSorted;
+    private       int                                    newVersion;
 
     public interface StorageProvider<Storage> {
-        Storage createTemporaryStorage();
+
+        void setVersionBy(Update<Storage> lastUpdate, Storage storage);
 
         boolean isStorageClosed(Storage storage);
 
         void closeStorage(Storage storage);
+
     }
 
-    public UpdateTester(StorageProvider<Storage> storageProvider, Collection<UpdateTest<Storage>> testUpdates) {
+    public UpdateTestRunner(StorageProvider<Storage> storageProvider, Collection<UpdateTest<Storage>> testUpdates) {
         this.storageProvider = storageProvider;
         this.updateMap = createUpdateMap(testUpdates);
         this.testUpdatesSorted = testUpdates;
         this.helper = new UpdateHelper<>(this);
     }
 
-    public void runTestUpdates(final int oldVersion, final int newVersion) {
+    public void runTestUpdates(Storage storage, int oldVersion, int newVersion) {
         this.newVersion = newVersion;
-        helper.onUpgrade(storageProvider.createTemporaryStorage(), oldVersion, newVersion);
+        helper.onUpgrade(storage, oldVersion, newVersion);
     }
 
-    private Map<Update<Storage>, UpdateTest<Storage>> createUpdateMap(Collection<UpdateTest<Storage>> testUpdates) {
-        Map<Update<Storage>, UpdateTest<Storage>> updateMap = new HashMap<>();
+    private Map<Integer, UpdateTest<Storage>> createUpdateMap(Collection<UpdateTest<Storage>> testUpdates) {
+        Map<Integer, UpdateTest<Storage>> updateMap = new HashMap<>();
+
         for (UpdateTest<Storage> test : testUpdates) {
-            updateMap.put(test.getUpdateToTest(), test);
+            updateMap.put(test.getUpdateToTest().getUpdateVersion(), test);
         }
         return updateMap;
     }
@@ -69,7 +72,9 @@ public class UpdateTester<Storage> implements UpdateWorker<Update<Storage>, Stor
 
     @Override
     public void onPostUpdate(Storage storage, Update<Storage> update) {
-        UpdateTest<Storage> testUpdate = updateMap.get(update);
+        storageProvider.setVersionBy(update, storage);
+
+        UpdateTest<Storage> testUpdate = updateMap.get(update.getUpdateVersion());
         //inserting mock data
         testUpdate.insertMockData(storage);
         //make tests with inserted mock data

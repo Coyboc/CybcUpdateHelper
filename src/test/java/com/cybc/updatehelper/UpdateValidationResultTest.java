@@ -27,8 +27,13 @@ public class UpdateValidationResultTest {
         assertEquals(updateVersion, u.getUpdateVersion());
     }
 
+    @Test(expected = UpdateNullException.class)
+    public void failureOnNullUpdateCollection(){
+        UpdateHelper.validateUpdates(null, 0);
+    }
+
     @Test
-    public void failureOnNoUpdates() {
+    public void failureOnEmptyUpdates() {
         List<Update> updates = new LinkedList<>();
         final UpdateHelper.UpdateValidationResult updateValidationResult = UpdateHelper.validateUpdates(updates, 0);
         assertNotNull(updateValidationResult);

@@ -9,4 +9,4 @@ sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
 //TODO remove me
-apply from: 'bintrayUpload.gradle'
+//apply from: 'bintrayUpload.gradle'

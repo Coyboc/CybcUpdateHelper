@@ -195,7 +195,19 @@ public class UpdateHelperTest {
         updates.add(createUpdate(3, false));
         updates.add(createUpdate(4, true));
         updates.add(createUpdate(5, false));
-        TestUpdateWorker worker = new TestUpdateWorker(2, updates);
+        TestUpdateWorker worker = new TestUpdateWorker(5, updates);
+        new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 5);
+    }
+
+    @Test(expected = UpdateNullException.class)
+    public void testUpdatesNull() {
+        TestUpdateWorker worker = new TestUpdateWorker(5, null);
+        new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 5);
+    }
+
+    @Test(expected = UpdateValidationException.class)
+    public void testUpdatesEmpty() {
+        TestUpdateWorker worker = new TestUpdateWorker(5, new ArrayList<Update<IntegerStorage>>());
         new UpdateHelper<>(worker).onUpgrade(new IntegerStorage(), 0, 5);
     }
 

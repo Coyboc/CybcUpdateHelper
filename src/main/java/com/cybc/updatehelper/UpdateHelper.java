@@ -75,6 +75,7 @@ public class UpdateHelper<UpdateImpl extends Update<StorageToUpdate>, StorageToU
 
                     lastVersionUpdate = targetVersion;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     throw new UpdateStepFailedException(update, e);
                 }
             }

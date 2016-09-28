@@ -410,7 +410,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.cybc.updatehelper.UpdateWorker;
 import com.cybc.updatehelper.testing.UpdateTest;
-import com.cybc.updatehelper.testing.UpdateTester;
+import com.cybc.updatehelper.testing.UpdateTestRunner;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
