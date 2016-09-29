@@ -221,7 +221,7 @@ public class UpdateHelperTest {
 
     @Test
     public void testCorruptUpdate() {
-        final IllegalArgumentException throwOnExcecute = new IllegalArgumentException("ExceptedCause, 'Something went wrong.'");
+        final IllegalArgumentException throwOnExcecute = new IllegalArgumentException("ExceptedCause, 'This is intended'");
         Update<IntegerStorage> corruptUpdate = new Update<IntegerStorage>() {
             @Override
             public void execute(IntegerStorage integers) throws Exception {
